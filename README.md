@@ -25,9 +25,9 @@ Then, when you want to decrypt `foo.txt.secret`, you can run:
 ```shell
 secret --decrypt foo.txt.secret bar.txt
 ```
-You must enter the same password you had when you encrypted the data. 
+You must enter the same password you had when you encrypted the data.
 
-Secret then decrypts `foo.txt.secret` and writes the data to a new file, `bar.txt`. 
+Secret then decrypts `foo.txt.secret` and writes the data to a new file, `bar.txt`.
 
 If you didn't specify `bar.txt`, Secret would try to write to `foo.txt`. However, Secret will never overwrite files and so it would print an error.
 

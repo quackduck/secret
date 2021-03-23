@@ -131,19 +131,17 @@ func main() { //nolint:gocyclo
 
 	var password []byte // default pass
 
-	fi, _ := os.Stdin.Stat()                  //nolint:errcheck // stat stdin will be fine
-	if (fi.Mode() & os.ModeCharDevice) == 0 { // password being piped
+	fi, _ := os.Stdin.Stat() //nolint:errcheck // stat stdin will be fine
+
+	if (fi.Mode() & os.ModeCharDevice) == 0 { // password is being piped
 		password, err = ioutil.ReadAll(os.Stdin)
-		//reader := bufio.NewReader(os.Stdin)
-		//pass, err := reader.ReadString('\n') // read until one line of input
 		if err != nil {
 			handleErr(err)
 			return
 		}
-		//pass = strings.TrimSuffix(pass, "\n") // readstring attaches delim
 	} else {
 		fmt.Print("Password: ")
-		password, err = term.ReadPassword(int(syscall.Stdin)) //nolint:
+		password, err = term.ReadPassword(int(syscall.Stdin)) //nolint:unconvert
 		fmt.Print("\033[2K\r")
 		if err != nil {
 			handleErr(err)
