@@ -60,6 +60,3 @@ brews:
     # Your app's description.
     # Default is empty.
     description: 'Encrypt anything with a password'
-    install: |
-      bin.install "cool"
-      bin.install "smc"
