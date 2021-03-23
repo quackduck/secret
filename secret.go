@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"math"
 	"os"
 	"strings"
 	"syscall"
@@ -262,7 +261,7 @@ func deriveKey(password, salt []byte) ([]byte, []byte, error) {
 			return nil, nil, err
 		}
 	}
-	key, err := scrypt.Key(password, salt, int(math.Pow(2, float64(cryptoStrength))), 8, 1, 32)
+	key, err := scrypt.Key(password, salt, 1<<cryptoStrength, 8, 1, 32)
 	if err != nil {
 		return nil, nil, err
 	}
