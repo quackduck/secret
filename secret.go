@@ -1,13 +1,13 @@
 package main
 
 import (
-	"bufio"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math"
 	"os"
 	"strings"
@@ -127,14 +127,14 @@ func main() {
 
 	fi, _ := os.Stdin.Stat()
 	if (fi.Mode() & os.ModeCharDevice) == 0 { // password being piped
-		reader := bufio.NewReader(os.Stdin)
-		pass, err := reader.ReadString('\n') // read until one line of input
-		if err != nil && err != io.EOF {
+		password, err = ioutil.ReadAll(os.Stdin)
+		//reader := bufio.NewReader(os.Stdin)
+		//pass, err := reader.ReadString('\n') // read until one line of input
+		if err != nil {
 			handleErr(err)
 			return
 		}
-		pass = strings.TrimSuffix(pass, "\n") // readstring attaches delim
-		password = []byte(pass)
+		//pass = strings.TrimSuffix(pass, "\n") // readstring attaches delim
 	} else {
 		fmt.Print("Password: ")
 		password, err = term.ReadPassword(int(syscall.Stdin))
