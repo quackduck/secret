@@ -44,13 +44,11 @@ Note:
 	cryptoStrength = 15 // scrypt's N = 2^15 = 32,768
 )
 
-func main() {
+func main() { //nolint:gocyclo
 	var (
 		src       io.Reader
-		dst       io.Writer = os.Stdin
+		dst       io.Writer
 		toEncrypt bool
-		err       error
-		f         *os.File
 		size      int64 = -1
 	)
 	if hasOption, _ := argsHaveOption("help", "h"); hasOption {
@@ -68,7 +66,7 @@ func main() {
 	}
 	if os.Args[1] == "-e" || os.Args[1] == "--encrypt" || os.Args[1] == "--make" {
 		toEncrypt = true
-		f, err = os.Open(os.Args[2])
+		f, err := os.Open(os.Args[2])
 		if err != nil {
 			handleErr(err)
 			return
@@ -83,7 +81,7 @@ func main() {
 	}
 	if os.Args[1] == "-d" || os.Args[1] == "--decrypt" || os.Args[1] == "--spill" {
 		toEncrypt = false
-		f, err = os.Open(os.Args[2])
+		f, err := os.Open(os.Args[2])
 		if err != nil {
 			handleErr(err)
 			return
@@ -97,6 +95,7 @@ func main() {
 		size = stat.Size()
 	}
 
+	var err error
 	if len(os.Args) > 3 { // check if user wants to write to some file: `secret --encrypt data dst`
 		dst, err = os.Create(os.Args[3])
 		if err != nil {
@@ -111,6 +110,10 @@ func main() {
 				return
 			}
 			dst, err = os.Create(os.Args[2] + ".secret")
+			if err != nil {
+				handleErr(err)
+				return
+			}
 		} else {
 			s := strings.TrimSuffix(os.Args[2], ".secret")
 			if exists(s) {
@@ -119,12 +122,16 @@ func main() {
 				return
 			}
 			dst, err = os.Create(s)
+			if err != nil {
+				handleErr(err)
+				return
+			}
 		}
 	}
 
 	var password []byte // default pass
 
-	fi, _ := os.Stdin.Stat()
+	fi, _ := os.Stdin.Stat()                  //nolint:errcheck // stat stdin will be fine
 	if (fi.Mode() & os.ModeCharDevice) == 0 { // password being piped
 		password, err = ioutil.ReadAll(os.Stdin)
 		//reader := bufio.NewReader(os.Stdin)
@@ -136,7 +143,7 @@ func main() {
 		//pass = strings.TrimSuffix(pass, "\n") // readstring attaches delim
 	} else {
 		fmt.Print("Password: ")
-		password, err = term.ReadPassword(int(syscall.Stdin))
+		password, err = term.ReadPassword(int(syscall.Stdin)) //nolint:
 		fmt.Print("\033[2K\r")
 		if err != nil {
 			handleErr(err)
@@ -158,9 +165,8 @@ func exists(path string) bool {
 func secret(password []byte, src io.Reader, dst io.Writer, toEncrypt bool, size int64) error {
 	if toEncrypt {
 		return encrypt(password, src, dst, size)
-	} else {
-		return decrypt(password, src, dst, size)
 	}
+	return decrypt(password, src, dst, size)
 }
 
 // Thanks to https://bruinsslot.jp/post/golang-crypto/ for some of the crypto logic
@@ -179,10 +185,10 @@ func encrypt(pass []byte, src io.Reader, dst io.Writer, size int64) error {
 	}
 	stream := sio.NewStream(gcm, sio.BufSize)
 
-	//nonce := make([]byte, stream.NonceSize())
-	//if _, err = rand.Read(nonce); err != nil {
-	//	return err
-	//}
+	// nonce := make([]byte, stream.NonceSize())
+	// if _, err = rand.Read(nonce); err != nil {
+	// 	return err
+	// }
 	pbar := pb.NewOptions64(size,
 		pb.OptionEnableColorCodes(true),
 		pb.OptionShowBytes(true),
@@ -198,13 +204,14 @@ func encrypt(pass []byte, src io.Reader, dst io.Writer, size int64) error {
 			BarStart:      "",
 			BarEnd:        "",
 		}))
-	dst.Write(salt) // attach salt at the start
+	defer pbar.Finish() //nolint:errcheck
+	// attach salt at the start
+	dst.Write(salt) //nolint:errcheck
 
 	dst = io.MultiWriter(dst, pbar) // attach progress bar
 	// make reader encrypted
 	src = stream.EncryptReader(src, make([]byte, stream.NonceSize()), nil) // nonce can be omitted because salt is always unique (and so key is unique)
 	_, err = io.Copy(dst, src)
-	pbar.Finish()
 	return err
 }
 
@@ -242,7 +249,7 @@ func decrypt(pass []byte, src io.Reader, dst io.Writer, size int64) error {
 			BarStart:      "█",
 			BarEnd:        "",
 		}))
-	defer pbar.Finish()
+	defer pbar.Finish() //nolint:errcheck
 
 	dst = io.MultiWriter(dst, pbar) // attach progress bar
 

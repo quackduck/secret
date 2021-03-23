@@ -27,7 +27,7 @@ secret --decrypt foo.txt.secret bar.txt
 ```
 You must enter the same password you had when you encrypted the data. 
 
-After this, Secret decrypts `foo.txt.secret` and writes the data to a new file, `bar.txt`. 
+Secret then decrypts `foo.txt.secret` and writes the data to a new file, `bar.txt`. 
 
 If you didn't specify `bar.txt`, Secret would try to write to `foo.txt`. However, Secret will never overwrite files and so it would print an error.
 
@@ -44,7 +44,7 @@ You can also use pipes to specify the password (this can be useful in scripts):
 echo "mypass" | secret -e foo   # use "mypass" as password and encrypt foo
 ```
 
-#### Details:
+### Details
 ```text
 Options:
    -e, --encrypt   Encrypt the source file and save to destination. If no
@@ -69,7 +69,7 @@ or get an executable from [releases](https://github.com/quackduck/secret/release
 brew uninstall quackduck/tap/secret
 ```
 or on Unix,
-```
+```shell
 rm $(which secret)
 ```
 or just delete it from wherever you installed the binary.
