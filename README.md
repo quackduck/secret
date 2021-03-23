@@ -2,6 +2,8 @@
 
 Ever wanted to hide a file? Now you can do it really easily!
 
+[![asciicast](https://asciinema.org/a/401528.svg)](https://asciinema.org/a/401528?speed=2&autoplay=1)
+
 ## Usage
 
 ```text
