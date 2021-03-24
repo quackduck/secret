@@ -41,8 +41,10 @@ Examples:
    echo "pass" | secret -e foo   # use "pass" as password and encrypt foo
 Note:
    Secret will never overwrite files and will exit with code 1 in this scenario`
-	cryptoStrength = 15 // scrypt's N = 2^15 = 32,768
+	cryptoStrength = 15 // scrypt's N = 2^15 = 32,768 // TODO: Make this 16 in Secret 2.0
 )
+
+// TODO: Consider changing encryption algo to ChaCha20 in Secret 2.0
 
 func main() { //nolint:gocyclo
 	var (
@@ -169,7 +171,9 @@ func secret(password []byte, src io.Reader, dst io.Writer, toEncrypt bool, size 
 
 // Thanks to https://bruinsslot.jp/post/golang-crypto/ for some of the crypto logic
 func encrypt(pass []byte, src io.Reader, dst io.Writer, size int64) error {
+	start := time.Now()
 	key, salt, err := deriveKey(pass, nil)
+	keyDur := time.Since(start).Round(time.Millisecond)
 	if err != nil {
 		return err
 	}
@@ -182,11 +186,6 @@ func encrypt(pass []byte, src io.Reader, dst io.Writer, size int64) error {
 		return err
 	}
 	stream := sio.NewStream(gcm, sio.BufSize)
-
-	// nonce := make([]byte, stream.NonceSize())
-	// if _, err = rand.Read(nonce); err != nil {
-	// 	return err
-	// }
 	pbar := pb.NewOptions64(size,
 		pb.OptionEnableColorCodes(true),
 		pb.OptionShowBytes(true),
@@ -202,20 +201,24 @@ func encrypt(pass []byte, src io.Reader, dst io.Writer, size int64) error {
 			BarStart:      "",
 			BarEnd:        "",
 		}))
-	defer pbar.Finish() //nolint:errcheck
+	nonce := make([]byte, stream.NonceSize())
+	rand.Read(nonce) //nolint:errcheck
 	// attach salt at the start
-	dst.Write(salt) //nolint:errcheck
+	dst.Write(append(salt, nonce...)) //nolint:errcheck
 
 	dst = io.MultiWriter(dst, pbar) // attach progress bar
 	// make reader encrypted
-	src = stream.EncryptReader(src, make([]byte, stream.NonceSize()), nil) // nonce can be omitted because salt is always unique (and so key is unique)
+	src = stream.EncryptReader(src, nonce, nil)
 	_, err = io.Copy(dst, src)
+	pbar.Finish() //nolint:errcheck
+	fmt.Println("Done in", time.Since(start).Round(time.Millisecond).String()+".", "Key derivation took", keyDur)
 	return err
 }
 
 func decrypt(pass []byte, src io.Reader, dst io.Writer, size int64) error {
+	start := time.Now()
 	salt := make([]byte, 32)
-	_, err := io.ReadFull(src, salt) // read in salt from the beginning
+	_, err := src.Read(salt) // read in salt from the beginning
 	if err != nil {
 		return err
 	}
@@ -232,6 +235,11 @@ func decrypt(pass []byte, src io.Reader, dst io.Writer, size int64) error {
 		return err
 	}
 	stream := sio.NewStream(gcm, sio.BufSize)
+	nonce := make([]byte, stream.NonceSize())
+	_, err = src.Read(nonce) // read in nonce
+	if err != nil {
+		return err
+	}
 	pbar := pb.NewOptions64(size,
 		pb.OptionEnableColorCodes(true),
 		pb.OptionShowBytes(true),
@@ -247,15 +255,16 @@ func decrypt(pass []byte, src io.Reader, dst io.Writer, size int64) error {
 			BarStart:      "█",
 			BarEnd:        "",
 		}))
-	defer pbar.Finish() //nolint:errcheck
 
 	dst = io.MultiWriter(dst, pbar) // attach progress bar
 
-	src = stream.DecryptReader(src, make([]byte, stream.NonceSize()), nil) // nonce can be omitted because salt is always unique (and so key is unique)
+	src = stream.DecryptReader(src, nonce, nil)
 	_, err = io.Copy(dst, src)
+	pbar.Finish() //nolint:errcheck
 	if err == sio.NotAuthentic {
 		return errors.New("authentication failed")
 	}
+	fmt.Println("Done in", time.Since(start).Round(time.Millisecond).String()+".")
 	return err
 }
 
