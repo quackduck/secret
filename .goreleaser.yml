@@ -19,8 +19,8 @@ builds:
       - arm
       - arm64
       - 386
-    ignore: # problems with build https://github.com/golang/go/issues/39033
-      - goos: darwin
+    ignore:
+      - goos: windows
         goarch: arm64
 archives:
   - replacements:
