@@ -4,6 +4,8 @@ Ever wanted to hide a file? Now you can do it really easily!
 
 [![asciicast](https://asciinema.org/a/401528.svg)](https://asciinema.org/a/401528?speed=2&autoplay=1)
 
+<a href="https://www.producthunt.com/posts/secret-2b8e7504-04e4-4a41-94bb-ae1e15ce49a5?utm_source=badge-featured&utm_medium=badge&utm_souce=badge-secret-2b8e7504-04e4-4a41-94bb-ae1e15ce49a5" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=289364&theme=light" alt="Secret - Encrypt anything with a password. | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
+
 ## Usage
 
 ```text
